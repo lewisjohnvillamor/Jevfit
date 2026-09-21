@@ -148,6 +148,10 @@ async function fetchJob(raw: string) {
     redirect: "follow",
     signal: AbortSignal.timeout(15_000),
   });
+  if (!r.ok && u.hostname.toLowerCase().includes("jobstreet"))
+    throw new Error(
+      "JobStreet blocks automated access. Paste the job description below."
+    );
   if (!r.ok)
     throw new Error(
       `The job page returned ${r.status}. Paste the description instead.`

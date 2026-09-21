@@ -113,9 +113,10 @@ export default function Home() {
           ?.scrollIntoView({ behavior: "smooth" })
       );
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "The analysis could not be completed."
-      );
+      const message =
+        e instanceof Error ? e.message : "The analysis could not be completed.";
+      if (message.includes("Paste the job description")) setShowPaste(true);
+      setError(message);
     } finally {
       setLoading(false);
     }
