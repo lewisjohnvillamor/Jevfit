@@ -9,7 +9,10 @@ RUN pnpm build
 FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production PORT=3000 WRANGLER_SEND_METRICS=false
-RUN corepack enable
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && corepack enable
 COPY --from=build /app ./
 EXPOSE 3000
 CMD ["pnpm", "start"]
