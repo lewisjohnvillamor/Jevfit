@@ -24,6 +24,7 @@ type Dimension = {
   note: string;
 };
 type Result = {
+  provider?: "offline" | "jev" | "ollama";
   overall: number;
   recommendation: string;
   recommendationConfidence: number;
@@ -33,6 +34,8 @@ type Result = {
   evidence: { term: string; excerpt: string }[];
   source: { jobTitle?: string; jobUrl?: string; resumeName?: string };
 };
+const DEMO_JOB = `Senior Technology Operations Manager. Lead infrastructure modernization, cloud operations, cybersecurity governance, vendor management, and service delivery. Required: 8+ years in technology leadership, experience managing cross-functional teams, incident response, IT budgets, executive stakeholders, and measurable reliability improvements. Preferred: AWS or Azure certification and experience with ISO 27001.`;
+const DEMO_RESUME = `Technology leader with 12 years of experience in technology leadership, infrastructure modernization, cloud operations, cybersecurity governance, vendor management, and service delivery. Led a 14-person cross-functional engineering and operations team. Improved platform reliability and availability from 99.5% to 99.95% and reduced critical incident response and recovery time by 42%. Owned a $2.4M annual IT budget and presented modernization roadmaps to executive stakeholders. Directed migrations to AWS and Azure, established incident response playbooks, and implemented ISO 27001 security controls. AWS Certified Solutions Architect.`;
 const scoreTone = (n: number) =>
   n >= 80 ? "text-emerald-700" : n >= 60 ? "text-amber-700" : "text-rose-700";
 
@@ -47,6 +50,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [result, setResult] = useState<Result | null>(null);
   const [apiKey, setApiKey] = useState("");
+  const [demoLoaded, setDemoLoaded] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const ready = useMemo(
     () =>
@@ -100,7 +104,7 @@ export default function Home() {
           jobUrl: jobUrl.trim(),
           jobText: jobText.trim(),
           resumeText,
-          resumeName: resume?.name,
+          resumeName: resume?.name || (demoLoaded ? "Synthetic demo resume" : undefined),
         }),
       });
       const b = await r.json();
@@ -120,6 +124,16 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  }
+  function loadDemo() {
+    setJobUrl("");
+    setJobText(DEMO_JOB);
+    setShowPaste(true);
+    setResume(null);
+    setResumeText(DEMO_RESUME);
+    setDemoLoaded(true);
+    setResult(null);
+    setError("");
   }
   return (
     <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
@@ -153,6 +167,13 @@ export default function Home() {
             Add the job posting and your PDF resume. Get a competency breakdown,
             missing requirements, and evidence in seconds.
           </p>
+          <button
+            type="button"
+            onClick={loadDemo}
+            className="mt-5 inline-flex h-11 items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 text-sm font-bold text-blue-800 transition hover:bg-blue-100"
+          >
+            <Sparkles size={17} /> Try the offline demo
+          </button>
         </div>
         <div className="grid gap-5 lg:grid-cols-2">
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_14px_50px_rgba(15,23,42,.06)] sm:p-7">
@@ -262,6 +283,14 @@ export default function Home() {
                     {Math.ceil(resume.size / 1024)} KB · Ready
                   </span>
                 </>
+              ) : demoLoaded ? (
+                <>
+                  <span className="grid h-11 w-11 place-items-center rounded-full bg-emerald-100 text-emerald-700">
+                    <Check size={22} />
+                  </span>
+                  <span className="mt-3 font-semibold text-slate-900">Synthetic demo resume</span>
+                  <span className="mt-1 text-sm text-slate-500">Loaded locally · no PDF uploaded</span>
+                </>
               ) : (
                 <>
                   <span className="grid h-11 w-11 place-items-center rounded-full bg-white text-blue-700 shadow-sm">
@@ -301,7 +330,8 @@ export default function Home() {
             />
             <p className="mt-2 text-xs leading-5 text-slate-500">
               Kept only in this browser tab and sent only with an analysis. It
-              is never saved by Jev Resume Fit.
+              is never saved by Jev Resume Fit. Without a key, the app uses its
+              built-in offline evidence scorer.
             </p>
           </div>
         </details>
@@ -352,6 +382,9 @@ function Results({ result }: { result: Result }) {
       <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
         <div className="rounded-3xl bg-slate-950 p-7 text-white">
           <p className="text-sm font-semibold text-slate-400">Overall match</p>
+          <span className="mt-3 inline-flex rounded-full bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-300">
+            {result.provider === "jev" ? "Jev-assisted analysis" : "Offline local analysis"}
+          </span>
           <div className="mt-4 flex items-end gap-2">
             <span className="text-7xl font-bold tracking-[-.07em]">
               {result.overall}

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { offlineAnalysis } from "@/lib/resume-analysis";
 
 type JevAnswer = { score?: number; confidence?: number; choice?: string };
 type JevResponse = {
@@ -249,14 +250,8 @@ export async function POST(request: Request) {
         400
       );
     const key = apiKey(request);
-    if (!key)
-      return json(
-        {
-          error:
-            "Add your Jev API key, or ask the site owner to configure one.",
-        },
-        503
-      );
+    const source = { jobTitle, jobUrl: b.jobUrl, resumeName: b.resumeName };
+    if (!key) return json({ ...offlineAnalysis(job, resume), source });
     const questions: Record<string, unknown> = {};
     for (const d of D)
       questions[d.id] = {
@@ -329,7 +324,8 @@ export async function POST(request: Request) {
       matchedTerms,
       missingTerms,
       evidence: evidence(resume, matchedTerms),
-      source: { jobTitle, jobUrl: b.jobUrl, resumeName: b.resumeName },
+      provider: "jev",
+      source,
       usage: jev.usage,
     });
   } catch (e) {
